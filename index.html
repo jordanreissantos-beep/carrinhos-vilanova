@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escala de Testemunho Público - Carrinhos</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- html2canvas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- jsPDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #1e293b;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* Tabela Estilo Excel */
+        .excel-table-container {
+            width: 100%;
+            max-width: 850px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            border: 2px solid #334155;
+        }
+
+        .excel-header-banner {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: #ffffff;
+            padding: 16px 20px;
+            text-align: center;
+            border-bottom: 3px solid #3b82f6;
+        }
+
+        .table-grid {
+            display: grid;
+            grid-template-columns: 140px 130px repeat(3, 1fr);
+            border-collapse: collapse;
+        }
+
+        .th-cell {
+            background-color: #1e293b;
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 10px 6px;
+            text-align: center;
+            border: 1px solid #334155;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .day-cell {
+            background-color: #f1f5f9;
+            color: #0f172a;
+            font-weight: 800;
+            font-size: 12px;
+            padding: 12px 6px;
+            text-align: center;
+            border: 1px solid #cbd5e1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.3;
+        }
+
+        .slot-time-cell {
+            background-color: #ffffff;
+            color: #334155;
+            font-weight: 700;
+            font-size: 11px;
+            padding: 10px 4px;
+            text-align: center;
+            border: 1px solid #cbd5e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .slot-data-cell {
+            background-color: #ffffff;
+            border: 1px solid #cbd5e1;
+            padding: 8px 6px;
+            text-align: center;
+            min-height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .day-block-even .slot-time-cell,
+        .day-block-even .slot-data-cell {
+            background-color: #ffffff;
+        }
+
+        .day-block-odd .slot-time-cell,
+        .day-block-odd .slot-data-cell {
+            background-color: #f8fafc;
+        }
+
+        .tarde-separator-grid {
+            grid-column: span 4;
+            background-color: #e2e8f0;
+            color: #334155;
+            font-weight: 800;
+            font-size: 11px;
+            letter-spacing: 1px;
+            padding: 6px;
+            text-align: center;
+            border: 1px solid #cbd5e1;
+            display: grid;
+            grid-template-columns: 130px repeat(3, 1fr);
+        }
+
+        .name-badge {
+            background-color: #dbeafe;
+            color: #1e40af;
+            font-weight: 800;
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            border: 1px solid #bfdbfe;
+            display: inline-block;
+            word-break: break-word;
+            line-height: 1.2;
+        }
+
+        .empty-dash {
+            color: #94a3b8;
+            font-weight: 500;
+            font-size: 12px;
+        }
+
+        .inactive-badge {
+            color: #dc2626;
+            font-weight: 800;
+            font-size: 10px;
+            background-color: #fef2f2;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px dashed #fca5a5;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-12">
+    <div id="app" class="max-w-md md:max-w-4xl mx-auto px-3 py-4">
+
+        <!-- CABEÇALHO PRINCIPAL -->
+        <header class="bg-slate-800 text-white rounded-2xl p-4 mb-4 shadow-lg border border-slate-700">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white text-lg font-black shadow-inner">
+                        <i class="fa-solid fa-hands-holding-circle"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-base font-extrabold tracking-tight">Testemunho Público</h1>
+                        <p class="text-xs text-slate-400">Congregação Vila Nova</p>
+                    </div>
+                </div>
+                
+                <!-- Status de Sincronização -->
+                <div class="flex items-center space-x-1.5 bg-slate-900/80 px-2.5 py-1 rounded-full border border-slate-700">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="text-[10px] text-slate-300 font-medium">Tempo Real</span>
+                </div>
+            </div>
+
+            <!-- SELETOR DE MODO (Publicador / Administrador) -->
+            <div class="mt-4 grid grid-cols-2 gap-2 bg-slate-900/60 p-1 rounded-xl border border-slate-700/50">
+                <button @click="setMode('user')" 
+                        :class="currentRole === 'user' ? 'bg-indigo-600 text-white font-bold shadow' : 'text-slate-400 hover:text-white font-medium'"
+                        class="py-2 text-xs rounded-lg transition-all flex items-center justify-center space-x-1.5">
+                    <i class="fa-solid fa-user"></i>
+                    <span>Publicador</span>
+                </button>
+                <button @click="setMode('admin')" 
+                        :class="currentRole === 'admin' ? 'bg-indigo-600 text-white font-bold shadow' : 'text-slate-400 hover:text-white font-medium'"
+                        class="py-2 text-xs rounded-lg transition-all flex items-center justify-center space-x-1.5">
+                    <i class="fa-solid fa-user-shield"></i>
+                    <span>Administrador</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- SELETOR DE SEMANA -->
+        <div class="bg-indigo-50/90 border border-indigo-100 rounded-2xl p-3.5 mb-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-2">
+            <div class="text-xs font-bold text-indigo-900 flex items-center space-x-2">
+                <i class="fa-solid fa-calendar-week text-indigo-600 text-sm"></i>
+                <span>{{ currentRole === 'user' ? '📅 Agendando para a PRÓXIMA SEMANA:' : 'Exibindo:' }} {{ currentWeekRangeText }}</span>
+            </div>
+
+            <div v-if="currentRole === 'admin'" class="flex items-center space-x-1">
+                <button @click="changeWeek(-1)" class="px-2.5 py-1 bg-white hover:bg-slate-100 active:scale-95 text-slate-700 rounded-lg text-xs font-bold border border-slate-200">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <button @click="resetToCurrentWeek" class="px-2.5 py-1 bg-white hover:bg-slate-100 active:scale-95 text-slate-700 rounded-lg text-xs font-bold border border-slate-200">
+                    Hoje
+                </button>
+                <button @click="changeWeek(1)" class="px-2.5 py-1 bg-white hover:bg-slate-100 active:scale-95 text-slate-700 rounded-lg text-xs font-bold border border-slate-200">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ================= VISÃO DO PUBLICADOR ================= -->
+        <div v-if="currentRole === 'user'" class="space-y-4">
+            
+            <!-- Caixa de Lembrete -->
+            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 text-xs text-amber-900 flex items-start space-x-2.5 shadow-sm">
+                <i class="fa-solid fa-circle-info text-amber-600 text-base mt-0.5 shrink-0"></i>
+                <div>
+                    <strong class="font-extrabold block text-amber-950 mb-0.5">LEMBRETE IMPORTANTE</strong>
+                    <span>Inscreva-se apenas nos dias e horários em que você tem certeza da sua disponibilidade. Se precisar alterar, avise o Administrador.</span>
+                </div>
+            </div>
+
+            <!-- Seleção de Ponto -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+                <label class="block text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-2.5">
+                    1. Escolha o Ponto de Testemunho:
+                </label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button v-for="loc in locations" 
+                            :key="loc.id"
+                            @click="isLocationDisabled(loc.id) ? null : userSelectedLocId = loc.id"
+                            :disabled="isLocationDisabled(loc.id)"
+                            :class="[
+                                isLocationDisabled(loc.id) ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60' :
+                                userSelectedLocId === loc.id ? 'bg-indigo-600 text-white shadow-md font-bold ring-2 ring-indigo-600' : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200 font-semibold'
+                            ]"
+                            class="py-3 px-2 rounded-xl text-xs sm:text-sm text-center transition-all flex flex-col items-center justify-center space-y-1">
+                        <i :class="isLocationDisabled(loc.id) ? 'fa-solid fa-ban text-red-400' : 'fa-solid fa-location-dot'"></i>
+                        <span>{{ loc.name }}</span>
+                        <span v-if="isLocationDisabled(loc.id)" class="text-[9px] font-bold text-red-500 uppercase">(Inativo)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Lista de Horários -->
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+                <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
+                    <h2 class="text-xs sm:text-sm font-bold text-slate-900 flex items-center space-x-2">
+                        <i class="fa-solid fa-clock text-indigo-600"></i>
+                        <span>Horários em {{ currentSelectedUserLoc.name }}</span>
+                    </h2>
+                    <span class="text-[10px] text-slate-500 font-medium">Toque para agendar</span>
+                </div>
+
+                <div v-if="isLocationDisabled(currentSelectedUserLoc.id)" class="bg-red-50 border border-red-200 text-red-800 p-4 rounded-xl text-center text-xs font-semibold">
+                    <i class="fa-solid fa-triangle-exclamation text-lg text-red-500 mb-1 block"></i>
+                    Este ponto de testemunho está temporariamente inativo para a semana selecionada.
+                </div>
+
+                <div v-else class="space-y-3.5">
+                    <div v-for="day in weekDays" :key="day.dateStr" class="bg-slate-50 rounded-xl p-3 border border-slate-200">
+                        <div class="font-extrabold text-xs text-slate-800 mb-2.5 pb-1 border-b border-slate-200/80 flex items-center justify-between">
+                            <span class="text-indigo-900">{{ day.dayName }}</span>
+                            <span class="text-slate-500 font-semibold">{{ day.formattedDate }}</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <div v-for="slot in timeSlots" :key="slot" class="bg-white p-2.5 rounded-lg border border-slate-200 flex items-center justify-between shadow-2xs">
+                                <div>
+                                    <span class="text-xs font-bold text-slate-700 block">{{ slot }}</span>
+                                    <span class="text-[11px] font-semibold text-indigo-600">
+                                        {{ getUserSlotStatusText(currentSelectedUserLoc.id, day.dateStr, slot) }}
+                                    </span>
+                                </div>
+
+                                <button @click="openUserBookingModal(day, slot)"
+                                        :disabled="isSlotFull(currentSelectedUserLoc.id, day.dateStr, slot)"
+                                        :class="isSlotFull(currentSelectedUserLoc.id, day.dateStr, slot) ? 'bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200' : 'bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white shadow-xs'"
+                                        class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all border border-transparent">
+                                    {{ isSlotFull(currentSelectedUserLoc.id, day.dateStr, slot) ? 'Lotado' : '+ Agendar' }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= VISÃO DO ADMINISTRADOR ================= -->
+        <div v-if="currentRole === 'admin'" class="space-y-4">
+            
+            <!-- Painel de Ações do Administrador -->
+            <div class="bg-slate-800 text-white rounded-2xl p-4 shadow-md border border-slate-700">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                    <div>
+                        <h2 class="text-sm font-bold flex items-center space-x-2">
+                            <i class="fa-solid fa-sliders text-amber-400"></i>
+                            <span>Painel do Administrador</span>
+                        </h2>
+                        <p class="text-[11px] text-slate-400">Exporte os relatórios ou gerencie a programação</p>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <button @click="activeModal = 'manage_locations'" class="bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 text-xs font-extrabold px-3 py-2 rounded-xl transition-all flex items-center space-x-1.5 shadow-sm">
+                            <i class="fa-solid fa-toggle-on"></i>
+                            <span>Gerenciar Pontos</span>
+                        </button>
+
+                        <button @click="shareAsJPEG" class="bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white text-xs font-bold px-3 py-2 rounded-xl transition-all flex items-center space-x-1.5 shadow-sm">
+                            <i class="fa-brands fa-whatsapp text-sm"></i>
+                            <span>Enviar WhatsApp</span>
+                        </button>
+
+                        <button @click="downloadJPEG" class="bg-blue-600 hover:bg-blue-500 active:scale-95 text-white text-xs font-bold px-3 py-2 rounded-xl transition-all flex items-center space-x-1.5 shadow-sm">
+                            <i class="fa-solid fa-download"></i>
+                            <span>Baixar Imagem</span>
+                        </button>
+
+                        <button @click="copyWhatsAppText" class="bg-slate-700 hover:bg-slate-600 active:scale-95 text-white text-xs font-bold px-3 py-2 rounded-xl transition-all flex items-center space-x-1.5">
+                            <i class="fa-solid fa-copy"></i>
+                            <span>Texto</span>
+                        </button>
+
+                        <button @click="exportToPDF" class="bg-red-600 hover:bg-red-500 active:scale-95 text-white text-xs font-bold px-3 py-2 rounded-xl transition-all flex items-center space-x-1.5">
+                            <i class="fa-solid fa-file-pdf"></i>
+                            <span>PDF</span>
+                        </button>
+
+                        <button @click="activeModal = 'clear_confirm'" class="bg-rose-900/80 hover:bg-rose-800 active:scale-95 text-rose-200 text-xs font-bold px-3 py-2 rounded-xl transition-all border border-rose-700">
+                            <i class="fa-solid fa-trash-can"></i>
+                            <span>Limpar Escala</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TABELA EXCEL DA ESCALA -->
+            <div class="overflow-x-auto pb-4">
+                <div id="schedule-table-export" class="excel-table-container">
+                    
+                    <!-- Banner da Planilha -->
+                    <div class="excel-header-banner">
+                        <h2 class="text-sm font-black uppercase tracking-wider">PROGRAMAÇÃO SEMANAL TESTEMUNHO COM OS CARRINHOS</h2>
+                        <div class="mt-1 inline-block bg-indigo-500/30 px-3 py-0.5 rounded-full text-[11px] font-bold text-indigo-200 border border-indigo-400/30">
+                            SEMANA: {{ currentWeekRangeText }}
+                        </div>
+                    </div>
+
+                    <!-- Estrutura da Tabela -->
+                    <div class="table-grid">
+                        
+                        <!-- Cabeçalhos das Colunas -->
+                        <div class="th-cell">DIA</div>
+                        <div class="th-cell">HORÁRIO</div>
+                        <div v-for="loc in locations" :key="loc.id" class="th-cell">
+                            {{ loc.name }}
+                            <span v-if="isLocationDisabled(loc.id)" class="text-[9px] text-red-400 block font-normal">(INATIVO)</span>
+                        </div>
+
+                        <!-- Linhas dos Dias da Semana -->
+                        <template v-for="(day, index) in weekDays" :key="day.dateStr">
+                            <div class="contents" :class="index % 2 === 0 ? 'day-block-even' : 'day-block-odd'">
+                                
+                                <!-- Coluna Lateral do Dia -->
+                                <div class="day-cell" style="grid-row: span 5;">
+                                    <span class="text-indigo-950 font-black text-xs uppercase">{{ day.dayName }}</span>
+                                    <span class="text-slate-600 font-bold text-[11px] mt-0.5">{{ day.formattedDate }}</span>
+                                </div>
+
+                                <!-- MANHÃ: Slot 07:00 as 09:00 -->
+                                <div class="slot-time-cell">{{ timeSlots[0] }}</div>
+                                <div v-for="loc in locations" :key="loc.id" @click="isLocationDisabled(loc.id) ? null : openAdminEditModal(day, timeSlots[0], loc)" class="slot-data-cell" :class="isLocationDisabled(loc.id) ? 'bg-red-50/40' : 'hover:bg-indigo-50/70 cursor-pointer'">
+                                    <span v-if="isLocationDisabled(loc.id)" class="inactive-badge">INATIVO</span>
+                                    <span v-else-if="formatVolunteersText(loc.id, day.dateStr, timeSlots[0])" class="name-badge">
+                                        {{ formatVolunteersText(loc.id, day.dateStr, timeSlots[0]) }}
+                                    </span>
+                                    <span v-else class="empty-dash">---</span>
+                                </div>
+
+                                <!-- MANHÃ: Slot 09:00 as 11:00 -->
+                                <div class="slot-time-cell">{{ timeSlots[1] }}</div>
+                                <div v-for="loc in locations" :key="loc.id" @click="isLocationDisabled(loc.id) ? null : openAdminEditModal(day, timeSlots[1], loc)" class="slot-data-cell" :class="isLocationDisabled(loc.id) ? 'bg-red-50/40' : 'hover:bg-indigo-50/70 cursor-pointer'">
+                                    <span v-if="isLocationDisabled(loc.id)" class="inactive-badge">INATIVO</span>
+                                    <span v-else-if="formatVolunteersText(loc.id, day.dateStr, timeSlots[1])" class="name-badge">
+                                        {{ formatVolunteersText(loc.id, day.dateStr, timeSlots[1]) }}
+                                    </span>
+                                    <span v-else class="empty-dash">---</span>
+                                </div>
+
+                                <!-- Divisória TARDE -->
+                                <div class="tarde-separator-grid">
+                                    <div>TARDE</div>
+                                    <div v-for="loc in locations" :key="loc.id">---</div>
+                                </div>
+
+                                <!-- TARDE: Slot 14:00 as 16:00 -->
+                                <div class="slot-time-cell">{{ timeSlots[2] }}</div>
+                                <div v-for="loc in locations" :key="loc.id" @click="isLocationDisabled(loc.id) ? null : openAdminEditModal(day, timeSlots[2], loc)" class="slot-data-cell" :class="isLocationDisabled(loc.id) ? 'bg-red-50/40' : 'hover:bg-indigo-50/70 cursor-pointer'">
+                                    <span v-if="isLocationDisabled(loc.id)" class="inactive-badge">INATIVO</span>
+                                    <span v-else-if="formatVolunteersText(loc.id, day.dateStr, timeSlots[2])" class="name-badge">
+                                        {{ formatVolunteersText(loc.id, day.dateStr, timeSlots[2]) }}
+                                    </span>
+                                    <span v-else class="empty-dash">---</span>
+                                </div>
+
+                                <!-- TARDE: Slot 16:00 as 18:00 -->
+                                <div class="slot-time-cell">{{ timeSlots[3] }}</div>
+                                <div v-for="loc in locations" :key="loc.id" @click="isLocationDisabled(loc.id) ? null : openAdminEditModal(day, timeSlots[3], loc)" class="slot-data-cell" :class="isLocationDisabled(loc.id) ? 'bg-red-50/40' : 'hover:bg-indigo-50/70 cursor-pointer'">
+                                    <span v-if="isLocationDisabled(loc.id)" class="inactive-badge">INATIVO</span>
+                                    <span v-else-if="formatVolunteersText(loc.id, day.dateStr, timeSlots[3])" class="name-badge">
+                                        {{ formatVolunteersText(loc.id, day.dateStr, timeSlots[3]) }}
+                                    </span>
+                                    <span v-else class="empty-dash">---</span>
+                                </div>
+
+                            </div>
+                        </template>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= MODAIS ================= -->
+
+        <!-- MODAL 1: PREENCHER NOME DO PUBLICADOR -->
+        <div v-if="activeModal === 'user_booking_step1'" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-slate-100">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-sm font-extrabold text-slate-900">Agendar Horário</h3>
+                    <button @click="activeModal = null" class="text-slate-400 hover:text-slate-600">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 mb-4 text-xs space-y-1">
+                    <div><strong>Ponto:</strong> {{ currentSelectedUserLoc.name }}</div>
+                    <div><strong>Dia:</strong> {{ bookingTemp.dayName }} ({{ bookingTemp.formattedDate }})</div>
+                    <div><strong>Horário:</strong> {{ bookingTemp.slot }}</div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Seu Nome Completo:</label>
+                    <input type="text" 
+                           v-model="bookingTemp.volunteerName" 
+                           placeholder="Ex: João Silva" 
+                           class="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+
+                <div class="flex space-x-2">
+                    <button @click="activeModal = null" class="w-1/2 py-2.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl">
+                        Cancelar
+                    </button>
+                    <button @click="proceedToConfirmation" 
+                            :disabled="!bookingTemp.volunteerName.trim()"
+                            :class="!bookingTemp.volunteerName.trim() ? 'bg-indigo-300 text-white cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 text-white'"
+                            class="w-1/2 py-2.5 text-xs font-bold rounded-xl transition-all shadow-sm">
+                        Avançar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL 2: CONFIRMAÇÃO COM PREZADO(A) IRMÃO(Ã) -->
+        <div v-if="activeModal === 'user_booking_step2'" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-slate-100">
+                <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3 text-lg">
+                    <i class="fa-solid fa-user-check"></i>
+                </div>
+
+                <h3 class="text-base font-extrabold text-slate-900 text-center mb-1">Confirmar Seu Agendamento</h3>
+                
+                <div class="bg-indigo-50/70 border border-indigo-100 p-3 rounded-xl text-xs text-indigo-950 mb-4 leading-relaxed">
+                    <strong>Prezado(a) irmão(ã) {{ bookingTemp.volunteerName.trim() }}</strong>, por favor confirme que você está efetuando a inscrição apenas do seu próprio nome para este dia e horário.
+                </div>
+
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs mb-4 space-y-1">
+                    <div><strong>Nome:</strong> {{ bookingTemp.volunteerName }}</div>
+                    <div><strong>Local:</strong> {{ currentSelectedUserLoc.name }}</div>
+                    <div><strong>Data:</strong> {{ bookingTemp.dayName }} - {{ bookingTemp.formattedDate }}</div>
+                    <div><strong>Horário:</strong> {{ bookingTemp.slot }}</div>
+                </div>
+
+                <div class="flex space-x-2">
+                    <button @click="activeModal = 'user_booking_step1'" class="w-1/2 py-2.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl">
+                        Voltar
+                    </button>
+                    <button @click="confirmUserBooking" 
+                            :disabled="isSubmitting"
+                            class="w-1/2 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-all shadow-sm flex items-center justify-center space-x-1">
+                        <i v-if="isSubmitting" class="fa-solid fa-circle-notch fa-spin"></i>
+                        <span>{{ isSubmitting ? 'Agendando...' : 'Confirmar' }}</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL 3: SUCESSO DO AGENDAMENTO -->
+        <div v-if="activeModal === 'user_booking_success'" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl max-w-xs w-full p-5 shadow-2xl border border-slate-100 text-center">
+                <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
+                    <i class="fa-solid fa-circle-check"></i>
+                </div>
+
+                <h3 class="text-base font-extrabold text-slate-900 mb-1">Agendamento Realizado!</h3>
+                <p class="text-xs text-slate-500 mb-4">Seu nome foi gravado com sucesso na escala semanal.</p>
+
+                <button @click="activeModal = null" class="w-full py-2.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm">
+                    Concluir
+                </button>
+            </div>
+        </div>
+
+        <!-- MODAL ADMINISTRADOR: SENHA DE ACESSO -->
+        <div v-if="activeModal === 'admin_login'" class="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl max-w-xs w-full p-5 shadow-2xl border border-slate-100 text-center">
+                <div class="w-12 h-12 bg-slate-100 text-slate-800 rounded-full flex items-center justify-center mx-auto mb-3 text-lg">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+                <h3 class="text-base font-extrabold text-slate-900 mb-1">Acesso Restrito</h3>
+                <p class="text-xs text-slate-500 mb-3">Digite o PIN do Administrador</p>
+
+                <input type="password" 
+                       v-model="adminPinInput" 
+                       placeholder="Senha" 
+                       @keyup.enter="verifyAdminPin"
+                       class="w-full text-center tracking-widest text-lg py-2 rounded-xl border border-slate-300 mb-3 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+
+                <div class="flex space-x-2">
+                    <button @click="activeModal = null; currentRole = 'user'" class="w-1/2 py-2 text-xs font-bold text-slate-600 bg-slate-100 rounded-xl">
+                        Cancelar
+                    </button>
+                    <button @click="verifyAdminPin" class="w-1/2 py-2 text-xs font-bold text-white bg-indigo-600 rounded-xl">
+                        Entrar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: GERENCIAR PONTOS / CARRINHOS ATIVOS -->
+        <div v-if="activeModal === 'manage_locations'" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl max-w-xs w-full p-5 shadow-2xl border border-slate-100 text-center">
+                <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto mb-3 text-lg">
+                    <i class="fa-solid fa-store"></i>
+                </div>
+                <h3 class="text-base font-extrabold text-slate-900 mb-1">Status dos Pontos</h3>
+                <p class="text-xs text-slate-500 mb-4">Ative ou inative carrinhos para esta semana</p>
+
+                <div class="space-y-2.5 mb-5 text-left">
+                    <div v-for="loc in locations" :key="loc.id" class="flex items-center justify-between p-3 rounded-xl border" :class="isLocationDisabled(loc.id) ? 'bg-red-50/50 border-red-200' : 'bg-slate-50 border-slate-200'">
+                        <div class="flex items-center space-x-2">
+                            <i :class="isLocationDisabled(loc.id) ? 'fa-solid fa-circle-xmark text-red-500' : 'fa-solid fa-circle-check text-emerald-500'"></i>
+                            <span class="text-xs font-extrabold text-slate-800">{{ loc.name }}</span>
+                        </div>
+                        <button @click="toggleLocationStatus(loc.id)" 
+                                :class="isLocationDisabled(loc.id) ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-red-600 hover:bg-red-700 text-white'"
+                                class="px-3 py-1 rounded-lg text-xs font-bold transition-all shadow-sm">
+                            {{ isLocationDisabled(loc.id) ? 'Ativar' : 'Inativar' }}
+                        </button>
+                    </div>
+                </div>
+
+                <button @click="activeModal = null" class="w-full py-2.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl">
+                    Concluir
+                </button>
+            </div>
+        </div>
+
+        <!-- MODAL ADMINISTRADOR: EDITAR VAGAS DA TABELA -->
+        <div v-if="activeModal === 'admin_edit_slot'" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-slate-100">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-sm font-extrabold text-slate-900">Editar Escala (Administrador)</h3>
+                    <button @click="activeModal = null" class="text-slate-400 hover:text-slate-600">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+
+                <div class="bg-slate-50 p-2.5 rounded-xl text-xs mb-3 space-y-0.5 border border-slate-200">
+                    <div><strong>Local:</strong> {{ adminEditTemp.locationName }}</div>
+                    <div><strong>Dia:</strong> {{ adminEditTemp.dayName }} ({{ adminEditTemp.formattedDate }})</div>
+                    <div><strong>Horário:</strong> {{ adminEditTemp.slot }}</div>
+                </div>
+
+                <div class="space-y-2 mb-4">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-600 mb-0.5">Publicador 1:</label>
+                        <input type="text" v-model="adminEditTemp.p1" class="w-full px-3 py-1.5 rounded-lg border text-xs focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-600 mb-0.5">Publicador 2:</label>
+                        <input type="text" v-model="adminEditTemp.p2" class="w-full px-3 py-1.5 rounded-lg border text-xs focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+
+                <div class="flex space-x-2">
+                    <button @click="activeModal = null" class="w-1/2 py-2 text-xs font-bold text-slate-600 bg-slate-100 rounded-xl">
+                        Cancelar
+                    </button>
+                    <button @click="saveAdminEdit" class="w-1/2 py-2 text-xs font-bold text-white bg-indigo-600 rounded-xl">
+                        Salvar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: CONFIRMAR LIMPEZA DE ESCALA -->
+        <div v-if="activeModal === 'clear_confirm'" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+            <div class="bg-white rounded-2xl max-w-xs w-full p-5 shadow-2xl border border-slate-100 text-center">
+                <div class="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-3 text-lg">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <h3 class="text-base font-extrabold text-slate-900 mb-1">Zerar Programação?</h3>
+                <p class="text-xs text-slate-500 mb-4">Isso removerá todos os nomes agendados na semana selecionada.</p>
+
+                <div class="flex space-x-2">
+                    <button @click="activeModal = null" class="w-1/2 py-2 text-xs font-bold text-slate-600 bg-slate-100 rounded-xl">
+                        Cancelar
+                    </button>
+                    <button @click="clearCurrentWeekSchedule" class="w-1/2 py-2 text-xs font-bold text-white bg-red-600 rounded-xl">
+                        Sim, Limpar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- TOAST / NOTIFICAÇÃO FLUTUANTE -->
+        <div v-if="toast.show" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white px-4 py-2.5 rounded-full shadow-2xl border border-slate-700 text-xs font-bold flex items-center space-x-2 animate-bounce">
+            <i class="fa-solid fa-circle-check text-emerald-400"></i>
+            <span>{{ toast.message }}</span>
+        </div>
+
+    </div>
+
+    <!-- FIREBASE CLOUD FIRESTORE MODULAR INTEGRATION -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, onSnapshot, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global Firebase Configuration
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'carrinhos-vilanova';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "AIzaSyC4HfqkrqtgyCm1wn2Htr4xmsCjjeliMao",
+            authDomain: "carrinhos-vilanova.firebaseapp.com",
+            projectId: "carrinhos-vilanova",
+            storageBucket: "carrinhos-vilanova.firebasestorage.app",
+            messagingSenderId: "193659338403",
+            appId: "1:193659338403:web:b23cc91a38ee37c3b88916",
+            measurementId: "G-PXKRFRTCQV"
+        };
+
+        let app, auth, db;
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+
+            // Authentication setup
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                signInWithCustomToken(auth, __initial_auth_token).catch(() => signInAnonymously(auth));
+            } else {
+                signInAnonymously(auth).catch(() => {});
+            }
+        } catch(e) {
+            console.warn("Firestore running in offline mode.");
+        }
+
+        // Global Firebase Firestore Helper Methods
+        window.listenToWeekSchedule = function(weekKey, callback) {
+            if (!db) return;
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'schedules', weekKey);
+            return onSnapshot(docRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    callback(snapshot.data());
+                } else {
+                    callback({});
+                }
+            }, (error) => {
+                console.warn("Firestore listener error:", error);
+            });
+        };
+
+        window.saveSlotToFirestore = async function(weekKey, slotKey, volunteersArray) {
+            if (!db) return;
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'schedules', weekKey);
+                await setDoc(docRef, { [slotKey]: volunteersArray }, { merge: true });
+            } catch(e) {
+                console.error("Cloud save error:", e);
+            }
+        };
+
+        window.clearWeekInFirestore = async function(weekKey) {
+            if (!db) return;
+            try {
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'schedules', weekKey);
+                await deleteDoc(docRef);
+            } catch(e) {
+                console.error("Cloud clear error:", e);
+            }
+        };
+    </script>
+
+    <!-- VUE 3 APPLICATION LOGIC -->
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    currentRole: 'user', // 'user' ou 'admin'
+                    adminPinInput: '',
+                    isAdminAuthenticated: false,
+                    weekOffset: 1, // Por padrão, inicia na Próxima Semana
+                    userSelectedLocId: 'padaria',
+                    activeModal: null,
+                    isSubmitting: false,
+
+                    locations: [
+                        { id: 'padaria', name: 'PADARIA' },
+                        { id: 'derba', name: 'DERBA' },
+                        { id: 'pantanal', name: 'PANTANAL' }
+                    ],
+
+                    timeSlots: [
+                        '07:00 as 09:00',
+                        '09:00 as 11:00',
+                        '14:00 as 16:00',
+                        '16:00 as 18:00'
+                    ],
+
+                    schedule: {}, // { [slotKey]: ['Voluntário 1', 'Voluntário 2'] }
+                    unsubscribeFirestore: null,
+
+                    toast: {
+                        show: false,
+                        message: ''
+                    },
+
+                    bookingTemp: {
+                        dayObj: null,
+                        dayName: '',
+                        formattedDate: '',
+                        dateStr: '',
+                        slot: '',
+                        volunteerName: ''
+                    },
+
+                    adminEditTemp: {
+                        dayObj: null,
+                        dayName: '',
+                        formattedDate: '',
+                        dateStr: '',
+                        slot: '',
+                        locationId: '',
+                        locationName: '',
+                        p1: '',
+                        p2: ''
+                    }
+                };
+            },
+
+            computed: {
+                currentSelectedUserLoc() {
+                    return this.locations.find(l => l.id === this.userSelectedLocId) || this.locations[0];
+                },
+
+                currentWeekKey() {
+                    const d = new Date();
+                    d.setDate(d.getDate() + (this.weekOffset * 7));
+                    const monday = this.getMonday(d);
+                    return this.formatYMD(monday);
+                },
+
+                weekDays() {
+                    const days = [];
+                    const dayNames = ['SEGUNDA', 'TERÇA', 'QUARTA', 'QUINTA', 'SEXTA', 'SÁBADO'];
+                    const baseMonday = this.getMonday(new Date());
+                    baseMonday.setDate(baseMonday.getDate() + (this.weekOffset * 7));
+
+                    for (let i = 0; i < 6; i++) {
+                        const currentDay = new Date(baseMonday);
+                        currentDay.setDate(baseMonday.getDate() + i);
+
+                        const dd = String(currentDay.getDate()).padStart(2, '0');
+                        const mm = String(currentDay.getMonth() + 1).padStart(2, '0');
+                        const dateStr = this.formatYMD(currentDay);
+
+                        days.push({
+                            dayName: dayNames[i],
+                            formattedDate: `${dd}/${mm}`,
+                            dateStr: dateStr
+                        });
+                    }
+                    return days;
+                },
+
+                currentWeekRangeText() {
+                    if (!this.weekDays || this.weekDays.length === 0) return '';
+                    const start = this.weekDays[0].formattedDate;
+                    const end = this.weekDays[5].formattedDate;
+                    return `${start} a ${end}`;
+                }
+            },
+
+            watch: {
+                currentWeekKey: {
+                    immediate: true,
+                    handler(newKey) {
+                        this.bindFirestoreSchedule(newKey);
+                    }
+                }
+            },
+
+            methods: {
+                showToast(msg) {
+                    this.toast.message = msg;
+                    this.toast.show = true;
+                    setTimeout(() => {
+                        this.toast.show = false;
+                    }, 3000);
+                },
+
+                formatYMD(date) {
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                },
+
+                getMonday(date) {
+                    const d = new Date(date);
+                    d.setHours(0, 0, 0, 0);
+                    const day = d.getDay();
+                    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+                    d.setDate(diff);
+                    return d;
+                },
+
+                setMode(role) {
+                    if (role === 'admin' && !this.isAdminAuthenticated) {
+                        this.adminPinInput = '';
+                        this.activeModal = 'admin_login';
+                    } else {
+                        this.currentRole = role;
+                    }
+                },
+
+                verifyAdminPin() {
+                    if (this.adminPinInput.trim() === '1914') {
+                        this.isAdminAuthenticated = true;
+                        this.currentRole = 'admin';
+                        this.activeModal = null;
+                        this.showToast('Modo Administrador Ativado!');
+                    } else {
+                        this.showToast('Senha incorreta!');
+                    }
+                },
+
+                changeWeek(delta) {
+                    this.weekOffset += delta;
+                },
+
+                resetToCurrentWeek() {
+                    this.weekOffset = 0;
+                },
+
+                bindFirestoreSchedule(weekKey) {
+                    if (this.unsubscribeFirestore) {
+                        this.unsubscribeFirestore();
+                    }
+
+                    // Tentar carregar do LocalStorage
+                    try {
+                        const localData = localStorage.getItem(`carrinhos_schedule_${weekKey}`);
+                        if (localData) {
+                            this.schedule = JSON.parse(localData);
+                        } else {
+                            this.schedule = {};
+                        }
+                    } catch(e) {
+                        this.schedule = {};
+                    }
+
+                    // Assinar atualizações do Firebase
+                    if (window.listenToWeekSchedule) {
+                        this.unsubscribeFirestore = window.listenToWeekSchedule(weekKey, (remoteData) => {
+                            this.schedule = remoteData || {};
+                            try {
+                                localStorage.setItem(`carrinhos_schedule_${weekKey}`, JSON.stringify(this.schedule));
+                            } catch(e) {}
+                        });
+                    }
+                },
+
+                isLocationDisabled(locId) {
+                    const key = `disabled_loc_${locId}`;
+                    return !!this.schedule[key];
+                },
+
+                async toggleLocationStatus(locId) {
+                    const key = `disabled_loc_${locId}`;
+                    const newStatus = !this.isLocationDisabled(locId);
+
+                    if (newStatus) {
+                        this.schedule[key] = true;
+                        if (window.saveSlotToFirestore) {
+                            await window.saveSlotToFirestore(this.currentWeekKey, key, [true]);
+                        }
+                        this.showToast(`Ponto ${locId.toUpperCase()} foi inativado.`);
+                    } else {
+                        delete this.schedule[key];
+                        if (window.saveSlotToFirestore) {
+                            await window.saveSlotToFirestore(this.currentWeekKey, key, []);
+                        }
+                        this.showToast(`Ponto ${locId.toUpperCase()} foi ativado.`);
+                    }
+
+                    try {
+                        localStorage.setItem(`carrinhos_schedule_${this.currentWeekKey}`, JSON.stringify(this.schedule));
+                    } catch(e) {}
+                },
+
+                getVolunteers(locId, dateStr, slot) {
+                    const key = `${locId}_${dateStr}_${slot}`;
+                    return this.schedule[key] || [];
+                },
+
+                formatVolunteersText(locId, dateStr, slot) {
+                    const list = this.getVolunteers(locId, dateStr, slot);
+                    if (!list || list.length === 0) return '';
+                    return list.filter(n => n && n.trim()).join(' E ');
+                },
+
+                getUserSlotStatusText(locId, dateStr, slot) {
+                    const list = this.getVolunteers(locId, dateStr, slot);
+                    const count = list.length;
+                    if (count === 0) return 'Vaga livre (2 disponíveis)';
+                    if (count === 1) return '1 vaga preenchida (1 livre)';
+                    return 'Lotado (2/2 preenchidos)';
+                },
+
+                isSlotFull(locId, dateStr, slot) {
+                    const list = this.getVolunteers(locId, dateStr, slot);
+                    return list.length >= 2;
+                },
+
+                openUserBookingModal(day, slot) {
+                    this.bookingTemp = {
+                        dayObj: day,
+                        dayName: day.dayName,
+                        formattedDate: day.formattedDate,
+                        dateStr: day.dateStr,
+                        slot: slot,
+                        volunteerName: ''
+                    };
+                    this.activeModal = 'user_booking_step1';
+                },
+
+                proceedToConfirmation() {
+                    if (!this.bookingTemp.volunteerName.trim()) return;
+                    this.activeModal = 'user_booking_step2';
+                },
+
+                async confirmUserBooking() {
+                    this.isSubmitting = true;
+                    const name = this.bookingTemp.volunteerName.trim();
+                    const key = `${this.currentSelectedUserLoc.id}_${this.bookingTemp.dateStr}_${this.bookingTemp.slot}`;
+
+                    let list = [...this.getVolunteers(this.currentSelectedUserLoc.id, this.bookingTemp.dateStr, this.bookingTemp.slot)];
+                    if (list.length < 2) {
+                        list.push(name);
+                    }
+
+                    // Salvar localmente
+                    this.schedule[key] = list;
+                    try {
+                        localStorage.setItem(`carrinhos_schedule_${this.currentWeekKey}`, JSON.stringify(this.schedule));
+                    } catch(e) {}
+
+                    // Salvar na nuvem
+                    if (window.saveSlotToFirestore) {
+                        await window.saveSlotToFirestore(this.currentWeekKey, key, list);
+                    }
+
+                    this.isSubmitting = false;
+                    this.activeModal = 'user_booking_success';
+                },
+
+                openAdminEditModal(day, slot, loc) {
+                    const list = this.getVolunteers(loc.id, day.dateStr, slot);
+                    this.adminEditTemp = {
+                        dayObj: day,
+                        dayName: day.dayName,
+                        formattedDate: day.formattedDate,
+                        dateStr: day.dateStr,
+                        slot: slot,
+                        locationId: loc.id,
+                        locationName: loc.name,
+                        p1: list[0] || '',
+                        p2: list[1] || ''
+                    };
+                    this.activeModal = 'admin_edit_slot';
+                },
+
+                async saveAdminEdit() {
+                    const key = `${this.adminEditTemp.locationId}_${this.adminEditTemp.dateStr}_${this.adminEditTemp.slot}`;
+                    const list = [];
+                    if (this.adminEditTemp.p1.trim()) list.push(this.adminEditTemp.p1.trim());
+                    if (this.adminEditTemp.p2.trim()) list.push(this.adminEditTemp.p2.trim());
+
+                    this.schedule[key] = list;
+
+                    try {
+                        localStorage.setItem(`carrinhos_schedule_${this.currentWeekKey}`, JSON.stringify(this.schedule));
+                    } catch(e) {}
+
+                    if (window.saveSlotToFirestore) {
+                        await window.saveSlotToFirestore(this.currentWeekKey, key, list);
+                    }
+
+                    this.activeModal = null;
+                    this.showToast('Escala atualizada com sucesso!');
+                },
+
+                async clearCurrentWeekSchedule() {
+                    this.schedule = {};
+                    try {
+                        localStorage.setItem(`carrinhos_schedule_${this.currentWeekKey}`, JSON.stringify({}));
+                    } catch(e) {}
+
+                    if (window.clearWeekInFirestore) {
+                        await window.clearWeekInFirestore(this.currentWeekKey);
+                    }
+
+                    this.activeModal = null;
+                    this.showToast('A programação da semana foi zerada.');
+                },
+
+                generateWhatsAppText() {
+                    let text = `*PROGRAMAÇÃO TESTEMUNHO PÚBLICO*\n`;
+                    text += `*Semana:* ${this.currentWeekRangeText}\n\n`;
+
+                    this.weekDays.forEach(day => {
+                        text += `📅 *${day.dayName} (${day.formattedDate})*\n`;
+                        this.timeSlots.forEach(slot => {
+                            text += `  ⏰ *${slot}*\n`;
+                            this.locations.forEach(loc => {
+                                if (this.isLocationDisabled(loc.id)) {
+                                    text += `     • ${loc.name}: _INATIVO_\n`;
+                                } else {
+                                    const names = this.formatVolunteersText(loc.id, day.dateStr, slot);
+                                    text += `     • ${loc.name}: ${names || '---'}\n`;
+                                }
+                            });
+                        });
+                        text += `\n`;
+                    });
+
+                    return text;
+                },
+
+                copyWhatsAppText() {
+                    const text = this.generateWhatsAppText();
+                    const el = document.createElement('textarea');
+                    el.value = text;
+                    document.body.appendChild(el);
+                    el.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(el);
+                    this.showToast('Texto copiado para a área de transferência!');
+                },
+
+                async renderScheduleCanvas() {
+                    const element = document.getElementById('schedule-table-export');
+                    if (!element) return null;
+                    return await html2canvas(element, {
+                        scale: 2,
+                        backgroundColor: '#ffffff',
+                        useCORS: true,
+                        logging: false
+                    });
+                },
+
+                async downloadJPEG() {
+                    this.showToast('Gerando imagem...');
+                    const canvas = await this.renderScheduleCanvas();
+                    if (!canvas) return;
+
+                    const image = canvas.toDataURL('image/jpeg', 0.95);
+                    const link = document.createElement('a');
+                    link.href = image;
+                    link.download = `Escala_Carrinhos_${this.currentWeekKey}.jpg`;
+                    link.click();
+                },
+
+                async shareAsJPEG() {
+                    this.showToast('Preparando imagem...');
+                    const canvas = await this.renderScheduleCanvas();
+                    if (!canvas) return;
+
+                    canvas.toBlob(async (blob) => {
+                        if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 'escala.jpg', { type: 'image/jpeg' })] })) {
+                            try {
+                                const file = new File([blob], `Escala_${this.currentWeekKey}.jpg`, { type: 'image/jpeg' });
+                                await navigator.share({
+                                    files: [file],
+                                    title: 'Escala de Carrinhos',
+                                    text: `Escala de Testemunho Público - Semana: ${this.currentWeekRangeText}`
+                                });
+                            } catch(e) {
+                                this.downloadJPEG();
+                            }
+                        } else {
+                            this.downloadJPEG();
+                        }
+                    }, 'image/jpeg', 0.95);
+                },
+
+                async exportToPDF() {
+                    this.showToast('Gerando PDF em formato A4...');
+                    const canvas = await this.renderScheduleCanvas();
+                    if (!canvas) return;
+
+                    const { jsPDF } = window.jspdf;
+                    const pdf = new jsPDF('landscape', 'mm', 'a4');
+                    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = pdf.internal.pageSize.getHeight();
+
+                    const imgWidth = canvas.width;
+                    const imgHeight = canvas.height;
+                    const ratio = Math.min((pdfWidth - 10) / imgWidth, (pdfHeight - 10) / imgHeight);
+
+                    const imgX = (pdfWidth - imgWidth * ratio) / 2;
+                    const imgY = (pdfHeight - imgHeight * ratio) / 2;
+
+                    pdf.addImage(imgData, 'JPEG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+                    pdf.save(`Escala_Carrinhos_${this.currentWeekKey}.pdf`);
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
